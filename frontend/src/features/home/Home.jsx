@@ -4,7 +4,8 @@ import { useAuth } from "../auth/hooks/useAuth"
 export default function Home({ onStartNegotiation }) {
   const { user, logout } = useAuth()
   // Fallback handler if not provided
-  const handleStart = onStartNegotiation || (() => alert("Negotiation feature coming soon!"))
+  const handleStart =
+    onStartNegotiation || (() => alert("Negotiation feature coming soon!"))
 
   return (
     <div className="min-h-screen bg-bg-main flex flex-col">
