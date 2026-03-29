@@ -3,10 +3,11 @@ import { useAuth } from "../auth/hooks/useAuth"
 
 export default function Home({ onStartNegotiation }) {
   const { user, logout } = useAuth()
+  // Fallback handler if not provided
+  const handleStart = onStartNegotiation || (() => alert("Negotiation feature coming soon!"))
 
   return (
     <div className="min-h-screen bg-bg-main flex flex-col">
-
       {/* HEADER */}
       <header className="w-full flex items-center justify-between px-6 md:px-16 py-4 sticky top-0 z-30 backdrop-blur border-b border-black/10 shadow-sm">
         <div className="flex items-center gap-3">
@@ -35,71 +36,29 @@ export default function Home({ onStartNegotiation }) {
 
       {/* MAIN */}
       <main className="flex-1 flex flex-col items-center justify-center px-6 md:px-16 text-center py-10">
-
         {/* TITLE */}
-        <h1 className="text-4xl md:text-5xl font-extrabold text-black mb-4 tracking-tight drop-shadow-sm">
+        <h1 className="text-4xl md:text-5xl font-extrabold text-black mb-4 tracking-tight">
           Bargenix
         </h1>
 
-        <p className="text-base md:text-lg text-gray-800 max-w-2xl mb-8">
-          Outsmart the AI seller and climb the leaderboard by getting the best deal.
-        </p>
-
-        {/* SECTION LABEL */}
-        <div className="mb-4 text-xs text-gray-700 uppercase tracking-widest">
-          Game Mechanics
+        {/* 🔥 NEW HERO LINES */}
+        <div className="max-w-2xl mb-6 space-y-2">
+          <p className="text-lg md:text-xl text-black font-medium">
+            Negotiation isn’t luck. It’s strategy.
+          </p>
+          <p className="text-sm md:text-base text-gray-800">
+            Chat with an AI seller, make your best offer, and see how low you
+            can go.
+          </p>
+          <p className="text-sm text-gray-700">
+            The better you negotiate, the higher you’ll rank.
+          </p>
         </div>
 
-        {/* 🔥 NEW FEATURES SECTION */}
-        <div className="w-full max-w-5xl mb-12">
-          <div className="flex flex-col md:flex-row items-stretch justify-center gap-6">
-
-            {/* Feature 1 */}
-            <div className="flex-1 p-5 rounded-xl border border-black/20 backdrop-blur-md bg-white/30 shadow-md hover:shadow-xl transition hover:-translate-y-1">
-              <div className="text-left">
-                <h3 className="text-lg font-bold text-black mb-1">
-                  Multi-Round Game
-                </h3>
-                <p className="text-sm text-gray-700">
-                  Limited rounds. Every move impacts your final deal.
-                </p>
-              </div>
-              <div className="mt-4 h-1 w-12 bg-accent rounded"></div>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="flex-1 p-5 rounded-xl border border-black/20 backdrop-blur-md bg-white/30 shadow-md hover:shadow-xl transition hover:-translate-y-1">
-              <div className="text-left">
-                <h3 className="text-lg font-bold text-black mb-1">
-                  AI Seller
-                </h3>
-                <p className="text-sm text-gray-700">
-                  Negotiates smartly, adapts to your strategy and tone.
-                </p>
-              </div>
-              <div className="mt-4 h-1 w-12 bg-accent rounded"></div>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="flex-1 p-5 rounded-xl border border-black/20 backdrop-blur-md bg-white/30 shadow-md hover:shadow-xl transition hover:-translate-y-1">
-              <div className="text-left">
-                <h3 className="text-lg font-bold text-black mb-1">
-                  Leaderboard
-                </h3>
-                <p className="text-sm text-gray-700">
-                  Compete globally. Lower deal gets you higher rank.
-                </p>
-              </div>
-              <div className="mt-4 h-1 w-12 bg-accent rounded"></div>
-            </div>
-
-          </div>
-        </div>
-
-        {/* CTA BUTTON */}
+        {/* 🔥 CTA MOVED UP */}
         <button
-          onClick={onStartNegotiation}
-          className="w-full max-w-xs py-5 rounded-2xl bg-btn-main border-2 border-black text-white font-extrabold text-xl relative overflow-hidden hover:scale-105 transition shadow-xl"
+          onClick={handleStart}
+          className="w-full max-w-xs py-5 mb-10 rounded-2xl bg-btn-main border-2 border-black text-white font-extrabold text-xl relative overflow-hidden hover:scale-105 transition shadow-xl"
         >
           <span className="absolute inset-0 flex items-center justify-center z-10">
             Start Negotiation
@@ -110,6 +69,45 @@ export default function Home({ onStartNegotiation }) {
           <span className="absolute inset-0 rounded-2xl bg-[repeating-linear-gradient(-45deg,_var(--stripe)_0px,_var(--stripe)_8px,_var(--btn-main)_8px,_var(--btn-main)_16px)] opacity-30 pointer-events-none z-0"></span>
         </button>
 
+        {/* SECTION LABEL */}
+        <div className="mb-4 text-xs text-gray-700 uppercase tracking-widest">
+          How It Works
+        </div>
+
+        {/* FEATURES */}
+        <div className="w-full max-w-5xl">
+          <div className="flex flex-col md:flex-row items-stretch justify-center gap-6">
+            <div className="flex-1 p-5 rounded-xl border border-black/20 backdrop-blur-md bg-white/30 shadow-md hover:shadow-xl transition hover:-translate-y-1">
+              <h3 className="text-lg font-bold text-black mb-1 text-left">
+                Multi-Round Game
+              </h3>
+              <p className="text-sm text-gray-700 text-left">
+                Limited rounds. Every move impacts your final deal.
+              </p>
+              <div className="mt-4 h-1 w-12 bg-accent rounded"></div>
+            </div>
+
+            <div className="flex-1 p-5 rounded-xl border border-black/20 backdrop-blur-md bg-white/30 shadow-md hover:shadow-xl transition hover:-translate-y-1">
+              <h3 className="text-lg font-bold text-black mb-1 text-left">
+                AI Seller
+              </h3>
+              <p className="text-sm text-gray-700 text-left">
+                Negotiates smartly, adapts to your strategy and tone.
+              </p>
+              <div className="mt-4 h-1 w-12 bg-accent rounded"></div>
+            </div>
+
+            <div className="flex-1 p-5 rounded-xl border border-black/20 backdrop-blur-md bg-white/30 shadow-md hover:shadow-xl transition hover:-translate-y-1">
+              <h3 className="text-lg font-bold text-black mb-1 text-left">
+                Leaderboard
+              </h3>
+              <p className="text-sm text-gray-700 text-left">
+                Compete globally. Lower deal gets you higher rank.
+              </p>
+              <div className="mt-4 h-1 w-12 bg-accent rounded"></div>
+            </div>
+          </div>
+        </div>
       </main>
 
       {/* FOOTER */}
