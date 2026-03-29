@@ -334,12 +334,17 @@ export default function Negotiate() {
           <video ref={videoRef} src="/gareeb.mp4" style={{ display: "none" }} />
           {completed && (
             <div className="text-center mt-4">
-              <div className="text-lg font-bold text-green-700 mb-2">
-                Negotiation Complete!
-              </div>
+              {finalAccepted === false ? (
+                <div className="text-lg font-bold text-red-600 mb-2">
+                  Negotiation Unsuccessful!
+                </div>
+              ) : (
+                <div className="text-lg font-bold text-green-700 mb-2">
+                  Negotiation Successful!
+                </div>
+              )}
               <div className="mb-2">
-                Final Price:{" "}
-                <span className="font-bold">${finalPrice?.toFixed(2)}</span>
+                Final Price: <span className="font-bold">${finalPrice?.toFixed(2)}</span>
               </div>
               {/* Final choice at 25% floor */}
               {showFinalChoice && finalAccepted === null && (
