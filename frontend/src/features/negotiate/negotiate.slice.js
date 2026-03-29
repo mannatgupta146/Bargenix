@@ -14,10 +14,10 @@ export const startNegotiationThunk = createAsyncThunk(
 
 export const makeOfferThunk = createAsyncThunk(
   "negotiate/makeOffer",
-  async (offer, { getState, rejectWithValue }) => {
+  async ({ offer, message }, { getState, rejectWithValue }) => {
     try {
       const sessionId = getState().negotiate.session?._id
-      return await apiMakeOffer(sessionId, offer)
+      return await apiMakeOffer(sessionId, offer, message)
     } catch (err) {
       return rejectWithValue(err.message)
     }
@@ -64,10 +64,10 @@ const negotiateSlice = createSlice({
       })
       .addCase(makeOfferThunk.fulfilled, (state, action) => {
         state.loading = false
-        state.history.push({
-          user: action.meta.arg,
-          ai: action.payload.aiCounter,
-        })
+        // Store full round info (user/AI message, price)
+        if (action.payload && action.payload.round) {
+          state.history.push(action.payload.round)
+        }
         if (action.payload.completed) {
           state.completed = true
           state.finalPrice = action.payload.finalPrice

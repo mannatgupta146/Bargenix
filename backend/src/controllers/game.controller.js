@@ -27,18 +27,43 @@ export const startNegotiation = async (req, res) => {
 // Make an offer in a negotiation round
 export const makeOffer = async (req, res) => {
   try {
-    const { sessionId, userOffer } = req.body
+    const { sessionId, userOffer, userMessage } = req.body
     const session = await NegotiationSession.findById(sessionId)
     if (!session || session.completed) {
       return res.status(400).json({ message: "Invalid or completed session" })
     }
-    // Simple AI logic: counter-offer is max(userOffer + 5, minPrice)
+    // Get starting price from first round or set default
+    let startingPrice = 100
+    if (session.rounds.length > 0) {
+      startingPrice = session.rounds[0].aiCounter || 100
+    } else if (session.aiConstraints && session.aiConstraints.minPrice) {
+      startingPrice = Math.round(session.aiConstraints.minPrice / 0.75)
+    }
+    // Enforce 25% minimum discount
+    const minAllowed = Math.round(startingPrice * 0.75)
     const { minPrice } = session.aiConstraints
-    let aiCounter = Math.max(userOffer + 5, minPrice)
-    if (userOffer >= minPrice) aiCounter = userOffer
-    session.rounds.push({ userOffer, aiCounter })
-    // If user meets or beats minPrice, negotiation ends
-    if (userOffer >= minPrice) {
+    const trueMin = Math.max(minPrice, minAllowed)
+    // AI logic: counter-offer is max(userOffer + 5, trueMin)
+    let aiCounter = Math.max(userOffer + 5, trueMin)
+    if (userOffer >= trueMin) aiCounter = userOffer
+
+    // AI message logic
+    let aiMessage = "That's still too low for me. Can you do a bit better?"
+    if (userOffer < trueMin) {
+      aiMessage = `Sorry, I can't go below $${trueMin}. Can you increase your offer?`
+    } else if (userOffer >= trueMin && !session.completed) {
+      aiMessage = `Deal! You got it for $${userOffer}.`
+    }
+
+    session.rounds.push({
+      userOffer,
+      userMessage,
+      aiCounter,
+      aiMessage,
+    })
+
+    // If user meets or beats min price, negotiation ends
+    if (userOffer >= trueMin) {
       session.finalPrice = userOffer
       session.completed = true
       // Update leaderboard
@@ -54,8 +79,10 @@ export const makeOffer = async (req, res) => {
     await session.save()
     res.json({
       aiCounter,
+      aiMessage,
       completed: session.completed,
       finalPrice: session.finalPrice,
+      round: session.rounds[session.rounds.length - 1],
     })
   } catch (err) {
     res.status(500).json({ message: err.message })

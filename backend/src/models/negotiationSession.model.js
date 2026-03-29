@@ -20,7 +20,9 @@ const negotiationSessionSchema = new mongoose.Schema(
     rounds: [
       {
         userOffer: Number,
+        userMessage: String,
         aiCounter: Number,
+        aiMessage: String,
         timestamp: { type: Date, default: Date.now },
       },
     ],

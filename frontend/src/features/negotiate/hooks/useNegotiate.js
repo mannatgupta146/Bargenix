@@ -10,7 +10,7 @@ export function useNegotiate() {
   const state = useSelector((s) => s.negotiate)
 
   const startNegotiation = () => dispatch(startNegotiationThunk())
-  const makeOffer = (offer) => dispatch(makeOfferThunk(offer))
+  const makeOffer = (offer, message) => dispatch(makeOfferThunk({ offer, message }))
   const reset = () => dispatch(resetNegotiation())
 
   return {

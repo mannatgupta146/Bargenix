@@ -13,12 +13,12 @@ export async function apiStartNegotiation() {
   return res.json()
 }
 
-export async function apiMakeOffer(sessionId, userOffer) {
+export async function apiMakeOffer(sessionId, userOffer, userMessage) {
   const res = await fetch(`${API_BASE}/offer`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sessionId, userOffer }),
+    body: JSON.stringify({ sessionId, userOffer, userMessage }),
   })
   if (!res.ok) throw new Error("Failed to make offer")
   return res.json()
