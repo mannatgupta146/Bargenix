@@ -123,26 +123,25 @@ export default function Negotiate() {
 
   const submitOffer = (e) => {
     e.preventDefault()
-    if (!offer || isNaN(Number(offer)) || completed) return
+    if (!offer || isNaN(Number(offer)) || completed || round >= 5) return
     const userOffer = Number(offer)
     let newAiPrice = aiPrice
     let aiMsg = ""
     let playFahh = true
     const minPrice = Number(product.price) * 0.25
-    if (round < 5) {
-      // AI never goes below 25% of original price
-      newAiPrice = Math.max(
-        Number(product.price) * (1 - 0.05 * (round + 1)),
-        minPrice,
-      )
-      aiMsg =
-        newAiPrice <= userOffer
-          ? `Deal! You got it for $${userOffer}`
-          : `I can do $${newAiPrice.toFixed(2)}. Can you go higher?`
-    } else {
-      newAiPrice = minPrice
+    const origPrice = Number(product.price)
+    // Each round, AI drops by exactly 5% of original price, never more
+    const drop = origPrice * 0.05
+    let nextAiPrice = aiPrice - drop
+    if (nextAiPrice < minPrice) nextAiPrice = minPrice
+    newAiPrice = nextAiPrice
+    if (newAiPrice <= userOffer) {
+      aiMsg = `Deal! You got it for $${userOffer}`
+    } else if (newAiPrice === minPrice) {
       aiMsg = "I can't go below this."
-      playFahh = false
+      playFahh = true
+    } else {
+      aiMsg = `I can do $${newAiPrice.toFixed(2)}. Can you go higher?`
     }
     setHistory((h) => [
       ...h,
@@ -158,27 +157,42 @@ export default function Negotiate() {
     setRound((r) => r + 1)
     setOffer("")
     setMessage("")
-    // If negotiation ends at 25% floor, show video
-    if (round >= 4 || newAiPrice <= userOffer) {
-      // If AI is at 25% floor and user hasn't accepted, ask for final choice
-      if (newAiPrice === minPrice && newAiPrice > userOffer) {
-        setShowFinalChoice(true)
-        setFinalPrice(newAiPrice)
+    // After 5th attempt (round 4), always show Yes/No if user hasn't accepted
+    if (round === 4) {
+      if (userOffer >= minPrice) {
         setCompleted(true)
+        setFinalPrice(minPrice)
+        setShowFinalChoice(false)
+        setFinalAccepted(true)
+        return
+      } else {
+        setCompleted(true)
+        setFinalPrice(newAiPrice)
+        setShowFinalChoice(true)
+        setFinalAccepted(null)
+        setTimeout(() => {
+          if (audioRef.current) {
+            audioRef.current.currentTime = 0
+            audioRef.current.play()
+          }
+        }, 200)
         return
       }
+    }
+    // If user accepts at any point before 5th round (AI price <= user offer and not at floor)
+    if (newAiPrice <= userOffer && newAiPrice > minPrice) {
       setCompleted(true)
-      setFinalPrice(Math.min(newAiPrice, userOffer))
+      setFinalPrice(newAiPrice)
       setShowFinalChoice(false)
       setFinalAccepted(true)
-    } else {
-      setTimeout(() => {
-        if (playFahh && audioRef.current) {
-          audioRef.current.currentTime = 0
-          audioRef.current.play()
-        }
-      }, 200)
+      return
     }
+    setTimeout(() => {
+      if (playFahh && audioRef.current) {
+        audioRef.current.currentTime = 0
+        audioRef.current.play()
+      }
+    }, 200)
   }
 
   if (loading) {
@@ -272,15 +286,14 @@ export default function Negotiate() {
                     {h.aiMessage && (
                       <div className="text-xs mt-1">{h.aiMessage}</div>
                     )}
-                    {i > 0 && (
-                      <div className="text-xs text-green-700 mt-1 font-semibold">
-                        Price lessened by $
-                        {Math.max(
-                          0,
-                          history[i - 1].aiCounter - h.aiCounter,
-                        ).toFixed(2)}
-                      </div>
-                    )}
+                    {i > 0 &&
+                      history[i - 1].aiCounter > h.aiCounter &&
+                      i !== history.length - 1 && (
+                        <div className="text-xs text-green-700 mt-1 font-semibold">
+                          Price lessened by $
+                          {(history[i - 1].aiCounter - h.aiCounter).toFixed(2)}
+                        </div>
+                      )}
                   </div>
                 </div>
               </React.Fragment>
