@@ -1,14 +1,10 @@
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom"
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom"
 
 import Login from "./features/auth/pages/Login.jsx"
 import Register from "./features/auth/pages/Register.jsx"
 import Protected from "./features/auth/components/Protected.jsx"
 import Home from "./features/home/Home.jsx"
+import Negotiate from "./features/negotiate/Negotiate.jsx"
 import { useSelector } from "react-redux"
 import { useEffect } from "react"
 import { useAuth } from "./features/auth/hooks/useAuth"
@@ -51,43 +47,50 @@ export default function App() {
     )
   }
 
+  const navigate = useNavigate()
   return (
-    <Router>
-      <Routes>
-        <Route
-          path="/login"
-          element={
-            <AuthRoute>
-              <Login />
-            </AuthRoute>
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <AuthRoute>
-              <Register />
-            </AuthRoute>
-          }
-        />
-        <Route
-          path="/"
-          element={
-            <Protected>
-              <Home />
-            </Protected>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <Protected>
-              <Profile />
-            </Protected>
-          }
-        />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </Router>
+    <Routes>
+      <Route
+        path="/login"
+        element={
+          <AuthRoute>
+            <Login />
+          </AuthRoute>
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          <AuthRoute>
+            <Register />
+          </AuthRoute>
+        }
+      />
+      <Route
+        path="/"
+        element={
+          <Protected>
+            <Home onStartNegotiation={() => navigate("/negotiate")} />
+          </Protected>
+        }
+      />
+      <Route
+        path="/negotiate"
+        element={
+          <Protected>
+            <Negotiate />
+          </Protected>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <Protected>
+            <Profile />
+          </Protected>
+        }
+      />
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
   )
 }
