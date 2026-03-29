@@ -6,6 +6,7 @@ export default function Login() {
   const { user, login, loading, error } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -35,14 +36,25 @@ export default function Login() {
             required
             className="w-full px-4 py-2 border border-black rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-[#a18aff]"
           />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="w-full px-4 py-2 border border-black rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-[#a18aff]"
-          />
+          <div className="relative w-full">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full px-4 py-2 border border-black rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-[#a18aff] pr-10"
+            />
+            <button
+              type="button"
+              tabIndex={-1}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 hover:text-black"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+            </button>
+          </div>
           <button
             type="submit"
             disabled={loading}
@@ -56,7 +68,7 @@ export default function Login() {
               style={{ zIndex: 1 }}
             ></span>
             <span
-              className="absolute inset-0 rounded-xl bg-[repeating-linear-gradient(-45deg,#a18aff_0px,_#a18aff_8px,_#4b3cc4_8px,_#4b3cc4_16px)] opacity-30 pointer-events-none"
+              className="absolute inset-0 rounded-xl bg-[repeating-linear-gradient(-45deg,#a18aff_0px,#a18aff_8px,#4b3cc4_8px,#4b3cc4_16px)] opacity-30 pointer-events-none"
               style={{ zIndex: 0 }}
             ></span>
           </button>
@@ -79,3 +91,52 @@ export default function Login() {
     </div>
   )
 }
+// Eye and EyeOff SVG icons
+const EyeIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    className="w-5 h-5"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M2.25 12s3.75-7.5 9.75-7.5 9.75 7.5 9.75 7.5-3.75 7.5-9.75 7.5S2.25 12 2.25 12z"
+    />
+    <circle
+      cx="12"
+      cy="12"
+      r="3"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      fill="none"
+    />
+  </svg>
+)
+const EyeOffIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    className="w-5 h-5"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M3 3l18 18M4.5 4.5C2.25 7.5 2.25 12 2.25 12s3.75 7.5 9.75 7.5c2.25 0 4.25-.5 6-1.5M19.5 19.5C21.75 16.5 21.75 12 21.75 12s-3.75-7.5-9.75-7.5c-1.5 0-2.93.22-4.25.63"
+    />
+    <circle
+      cx="12"
+      cy="12"
+      r="3"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      fill="none"
+    />
+  </svg>
+)

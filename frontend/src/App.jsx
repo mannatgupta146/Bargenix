@@ -8,7 +8,7 @@ import {
 import Login from "./features/auth/pages/Login.jsx"
 import Register from "./features/auth/pages/Register.jsx"
 import Protected from "./features/auth/components/Protected.jsx"
-import Home from "./features/Home.jsx"
+import Home from "./features/home/Home.jsx"
 import { useSelector } from "react-redux"
 import { useEffect } from "react"
 import { useAuth } from "./features/auth/hooks/useAuth"
