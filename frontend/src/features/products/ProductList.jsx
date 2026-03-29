@@ -12,7 +12,23 @@ export default function ProductList() {
     fetch("https://fakestoreapi.com/products")
       .then((res) => res.json())
       .then((data) => {
-        setItems(data)
+        let products = data
+        // If less than 50, duplicate and modify to fill up to 50
+        if (products.length < 50) {
+          const needed = 50 - products.length
+          let extra = []
+          for (let i = 0; i < needed; i++) {
+            const base = products[i % products.length]
+            extra.push({
+              ...base,
+              id: base.id + "-x" + (i + 1),
+              title: base.title + " (Var " + (i + 1) + ")",
+              price: (parseFloat(base.price) + (i + 1) * 1.11).toFixed(2),
+            })
+          }
+          products = [...products, ...extra]
+        }
+        setItems(products)
         setLoading(false)
       })
       .catch((err) => {
@@ -23,7 +39,43 @@ export default function ProductList() {
 
   return (
     <div className="flex flex-col items-center py-10 px-4 min-h-screen bg-bg-main">
-      <h1 className="text-3xl font-extrabold text-black mb-4">Products</h1>
+      <div className="w-full flex items-center justify-center mb-4 relative">
+        <button
+          className="flex items-center gap-1 px-4 py-2 bg-btn-main text-white font-semibold rounded-2xl border border-black hover:bg-[#372b7c] transition text-base shadow"
+          style={{
+            position: "fixed",
+            top: 24,
+            left: 24,
+            zIndex: 50,
+            width: 100,
+            minWidth: 100,
+            maxWidth: 100,
+            justifyContent: "center",
+          }}
+          onClick={() => navigate(-1)}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+            className="w-5 h-5"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15.75 19.5L8.25 12l7.5-7.5"
+            />
+          </svg>
+          <span
+            style={{ display: "inline-block", width: 40, textAlign: "left" }}
+          >
+            Back
+          </span>
+        </button>
+        <h1 className="text-3xl font-extrabold text-black">Products</h1>
+      </div>
       <div className="mb-6 text-lg text-gray-800 max-w-2xl text-center">
         Select a product below to start bargaining with the AI seller. The lower
         your final deal, the higher you’ll rank!
@@ -31,7 +83,7 @@ export default function ProductList() {
       {loading && <div className="text-lg text-gray-700">Loading...</div>}
       {error && <div className="text-red-600 mb-4">{error}</div>}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-6xl">
-        {items.map((p) => (
+        {items.slice(0, 50).map((p) => (
           <div
             key={p.id}
             className="bg-bg-card rounded-2xl shadow-xl p-0 border-2 border-black flex flex-col items-center transition-transform hover:-translate-y-1 hover:shadow-2xl group relative overflow-hidden"
