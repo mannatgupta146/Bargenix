@@ -135,7 +135,7 @@ export default function Negotiate() {
     let nextAiPrice = aiPrice - drop
     if (nextAiPrice < minPrice) nextAiPrice = minPrice
     newAiPrice = nextAiPrice
-    if (newAiPrice <= userOffer) {
+    if (userOffer >= newAiPrice) {
       aiMsg = `Deal! You got it for $${userOffer}`
     } else if (newAiPrice === minPrice) {
       aiMsg = "I can't go below this."
@@ -143,12 +143,14 @@ export default function Negotiate() {
     } else {
       aiMsg = `I can do $${newAiPrice.toFixed(2)}. Can you go higher?`
     }
+    // If user offer is higher than AI price, show user's offer as the AI price in chat
+    const displayAiPrice = userOffer >= newAiPrice ? userOffer : newAiPrice
     setHistory((h) => [
       ...h,
       {
         userOffer,
         userMessage: message,
-        aiCounter: newAiPrice,
+        aiCounter: displayAiPrice,
         aiMessage: aiMsg,
         round: round + 1,
       },
@@ -161,7 +163,7 @@ export default function Negotiate() {
     if (round === 4) {
       if (userOffer >= minPrice) {
         setCompleted(true)
-        setFinalPrice(minPrice)
+        setFinalPrice(userOffer)
         setShowFinalChoice(false)
         setFinalAccepted(true)
         return
@@ -182,7 +184,7 @@ export default function Negotiate() {
     // If user accepts at any point before 5th round (AI price <= user offer and not at floor)
     if (newAiPrice <= userOffer && newAiPrice > minPrice) {
       setCompleted(true)
-      setFinalPrice(newAiPrice)
+      setFinalPrice(userOffer)
       setShowFinalChoice(false)
       setFinalAccepted(true)
       return
