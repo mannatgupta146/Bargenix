@@ -27,12 +27,13 @@ export function useAuth() {
     [dispatch],
   )
 
+  // Register should NOT log in user automatically
   const register = useCallback(
     async (name, email, password) => {
       dispatch(setLoading(true))
       try {
-        const data = await api.register(name, email, password)
-        dispatch(setUser(data))
+        await api.register(name, email, password)
+        // No setUser here; let page handle navigation
       } catch (err) {
         dispatch(setError(err.response?.data?.message || "Register failed"))
       } finally {
@@ -47,5 +48,18 @@ export function useAuth() {
     dispatch(logoutAction())
   }, [dispatch])
 
-  return { user, loading, error, login, register, logout }
+  // Load user from backend (for session persistence)
+  const loadUser = useCallback(async () => {
+    dispatch(setLoading(true))
+    try {
+      const data = await api.getProfile()
+      dispatch(setUser(data))
+    } catch (err) {
+      dispatch(logoutAction())
+    } finally {
+      dispatch(setLoading(false))
+    }
+  }, [dispatch])
+
+  return { user, loading, error, login, register, logout, loadUser }
 }
