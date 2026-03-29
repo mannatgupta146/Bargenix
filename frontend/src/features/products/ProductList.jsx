@@ -29,6 +29,12 @@ export default function ProductList() {
           products = [...products, ...extra]
         }
         setItems(products)
+        try {
+          localStorage.setItem(
+            "bargenix_all_products",
+            JSON.stringify(products),
+          )
+        } catch (e) {}
         setLoading(false)
       })
       .catch((err) => {
@@ -111,7 +117,16 @@ export default function ProductList() {
             </div>
             <button
               className="w-full py-3 rounded-b-2xl bg-btn-main border-t border-black text-white font-bold text-lg hover:bg-[#372b7c] transition shadow group-hover:scale-105"
-              onClick={() => navigate(`/negotiate?product=${p.id}`)}
+              onClick={() => {
+                // Store product in localStorage for reload support
+                try {
+                  localStorage.setItem(
+                    "bargenix_selected_product",
+                    JSON.stringify(p),
+                  )
+                } catch (e) {}
+                navigate(`/negotiate?product=${p.id}`)
+              }}
               style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}
             >
               Negotiate
