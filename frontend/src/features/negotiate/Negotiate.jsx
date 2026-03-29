@@ -344,7 +344,8 @@ export default function Negotiate() {
                 </div>
               )}
               <div className="mb-2">
-                Final Price: <span className="font-bold">${finalPrice?.toFixed(2)}</span>
+                Final Price:{" "}
+                <span className="font-bold">${finalPrice?.toFixed(2)}</span>
               </div>
               {/* Final choice at 25% floor */}
               {showFinalChoice && finalAccepted === null && (
