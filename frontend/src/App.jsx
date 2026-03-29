@@ -5,6 +5,7 @@ import Register from "./features/auth/pages/Register.jsx"
 import Protected from "./features/auth/components/Protected.jsx"
 import Home from "./features/home/Home.jsx"
 import Negotiate from "./features/negotiate/Negotiate.jsx"
+import ProductList from "./features/products/ProductList.jsx"
 import { useSelector } from "react-redux"
 import { useEffect } from "react"
 import { useAuth } from "./features/auth/hooks/useAuth"
@@ -50,14 +51,7 @@ export default function App() {
   const navigate = useNavigate()
   return (
     <Routes>
-      <Route
-        path="/login"
-        element={
-          <AuthRoute>
-            <Login />
-          </AuthRoute>
-        }
-      />
+      <Route path="/login" element={<Login />} />
       <Route
         path="/register"
         element={
@@ -70,7 +64,15 @@ export default function App() {
         path="/"
         element={
           <Protected>
-            <Home onStartNegotiation={() => navigate("/negotiate")} />
+            <Home onStartNegotiation={() => navigate("/products")} />
+          </Protected>
+        }
+      />
+      <Route
+        path="/products"
+        element={
+          <Protected>
+            <ProductList />
           </Protected>
         }
       />

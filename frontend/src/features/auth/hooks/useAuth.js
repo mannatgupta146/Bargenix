@@ -18,6 +18,8 @@ export function useAuth() {
       try {
         const data = await api.login(email, password)
         dispatch(setUser(data))
+        // Persist user to localStorage
+        localStorage.setItem("bargenix_user", JSON.stringify(data))
       } catch (err) {
         dispatch(setError(err.response?.data?.message || "Login failed"))
       } finally {
@@ -46,16 +48,36 @@ export function useAuth() {
   const logout = useCallback(async () => {
     await api.logout()
     dispatch(logoutAction())
+    localStorage.removeItem("bargenix_user")
   }, [dispatch])
 
-  // Load user from backend (for session persistence)
+  // Load user from localStorage or backend (for session persistence)
   const loadUser = useCallback(async () => {
     dispatch(setLoading(true))
+    let found = false
+    // Try localStorage first
+    const stored = localStorage.getItem("bargenix_user")
+    if (stored) {
+      try {
+        const user = JSON.parse(stored)
+        if (user && user.email) {
+          dispatch(setUser(user))
+          found = true
+        }
+      } catch {}
+    }
+    // Always check backend for a valid session
     try {
       const data = await api.getProfile()
-      dispatch(setUser(data))
+      if (data && data.email) {
+        dispatch(setUser(data))
+        found = true
+        // Update localStorage with fresh data
+        localStorage.setItem("bargenix_user", JSON.stringify(data))
+      }
     } catch (err) {
       dispatch(logoutAction())
+      localStorage.removeItem("bargenix_user")
     } finally {
       dispatch(setLoading(false))
     }

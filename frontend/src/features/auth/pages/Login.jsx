@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react"
 import { useAuth } from "../hooks/useAuth"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate, useLocation } from "react-router-dom"
 
 export default function Login() {
   const { user, login, loading, error } = useAuth()
@@ -8,10 +8,18 @@ export default function Login() {
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
 
   useEffect(() => {
-    if (user) navigate("/")
-  }, [user, navigate])
+    // After login, redirect to intended page or home
+    if (user && location.pathname === "/login") {
+      const redirectTo =
+        location.state && location.state.from && location.state.from.pathname
+          ? location.state.from.pathname
+          : "/"
+      navigate(redirectTo, { replace: true })
+    }
+  }, [user, navigate, location])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

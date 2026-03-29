@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { useNegotiate } from "./hooks/useNegotiate"
 
 export default function Negotiate() {
@@ -15,11 +15,15 @@ export default function Negotiate() {
     reset,
   } = useNegotiate()
 
-  const handleStart = () => {
-    reset()
-    startNegotiation()
-    setOffer("")
-  }
+  // Start negotiation session automatically on mount if not started
+  useEffect(() => {
+    if (!session && !loading) {
+      reset()
+      startNegotiation()
+      setOffer("")
+    }
+    // eslint-disable-next-line
+  }, [])
 
   const submitOffer = (e) => {
     e.preventDefault()
@@ -30,16 +34,20 @@ export default function Negotiate() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-bg-main px-4 py-10">
-      <div className="w-full max-w-md bg-bg-card rounded-2xl shadow-xl p-8 border border-black flex flex-col items-center">
-        <h1 className="text-2xl font-bold text-black mb-4">Negotiation Game</h1>
-        {!session ? (
-          <button
-            onClick={handleStart}
-            className="px-6 py-3 rounded-xl bg-btn-main border-2 border-black text-white font-bold text-lg hover:scale-105 transition mb-2"
-            disabled={loading}
-          >
-            {loading ? "Starting..." : "Start Negotiation"}
-          </button>
+      <div className="w-full max-w-md bg-bg-card rounded-2xl shadow-xl p-8 border border-black flex flex-col items-center relative">
+        <h1 className="text-3xl font-extrabold text-black mb-4 tracking-tight">
+          Negotiate
+        </h1>
+        <p className="text-black text-center mb-6 text-base">
+          Try to get the best deal from the AI seller. The lower your final
+          price, the higher you’ll rank!
+        </p>
+        {!session || loading ? (
+          <div className="w-full flex items-center justify-center min-h-[120px]">
+            <span className="text-lg text-gray-700 font-semibold">
+              {loading ? "Starting negotiation..." : "Preparing..."}
+            </span>
+          </div>
         ) : completed ? (
           <div className="text-center">
             <div className="text-lg font-bold text-green-700 mb-2">
@@ -49,7 +57,11 @@ export default function Negotiate() {
               Final Price: <span className="font-bold">${finalPrice}</span>
             </div>
             <button
-              onClick={handleStart}
+              onClick={() => {
+                reset()
+                startNegotiation()
+                setOffer("")
+              }}
               className="px-4 py-2 rounded bg-btn-main border border-black text-white font-bold mt-2"
             >
               Start New Negotiation
@@ -97,6 +109,20 @@ export default function Negotiate() {
           </>
         )}
         {error && <div className="text-red-600 text-sm mt-2">{error}</div>}
+        {/* THEME for Negotiate page */}
+        <style>{`
+          :root {
+            --bg-main: #d6c7fa;
+            --bg-card: #f6f3ff;
+            --accent: #ffd600;
+            --btn-main: #4b3cc4;
+            --stripe: #a18aff;
+          }
+          .bg-bg-main { background-color: var(--bg-main); }
+          .bg-bg-card { background-color: var(--bg-card); }
+          .bg-accent { background-color: var(--accent); }
+          .bg-btn-main { background-color: var(--btn-main); }
+        `}</style>
       </div>
     </div>
   )

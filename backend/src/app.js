@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser"
 
 import authRoutes from "./routes/auth.routes.js"
 import gameRoutes from "./routes/game.routes.js"
+import productRoutes from "./routes/product.routes.js"
 
 const app = express()
 
@@ -19,7 +20,7 @@ app.use(express.urlencoded({ extended: true }))
 app.use(cookieParser())
 
 app.use("/api/auth", authRoutes)
-
 app.use("/api/game", gameRoutes)
+app.use("/api/products", productRoutes)
 
 export default app
