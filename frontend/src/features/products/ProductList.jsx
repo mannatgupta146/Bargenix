@@ -92,8 +92,17 @@ export default function ProductList() {
         {items.slice(0, 50).map((p) => (
           <div
             key={p.id}
-            className="bg-bg-card rounded-2xl shadow-xl p-0 border-2 border-black flex flex-col items-center transition-transform hover:-translate-y-1 hover:shadow-2xl group relative overflow-hidden"
+            className="bg-bg-card rounded-2xl shadow-xl p-0 border-2 border-black flex flex-col items-center transition-transform hover:-translate-y-1 hover:shadow-2xl group relative overflow-hidden cursor-pointer"
             style={{ minHeight: 370 }}
+            onClick={() => {
+              try {
+                localStorage.setItem(
+                  "bargenix_selected_product",
+                  JSON.stringify(p),
+                )
+              } catch (e) {}
+              navigate(`/negotiate?product=${p.id}`)
+            }}
           >
             <div className="w-full flex-1 flex flex-col items-center p-6">
               {p.image && (
@@ -117,16 +126,6 @@ export default function ProductList() {
             </div>
             <button
               className="w-full py-3 rounded-b-2xl bg-btn-main border-t border-black text-white font-bold text-lg hover:bg-[#372b7c] transition shadow group-hover:scale-105"
-              onClick={() => {
-                // Store product in localStorage for reload support
-                try {
-                  localStorage.setItem(
-                    "bargenix_selected_product",
-                    JSON.stringify(p),
-                  )
-                } catch (e) {}
-                navigate(`/negotiate?product=${p.id}`)
-              }}
               style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}
             >
               Negotiate
