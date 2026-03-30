@@ -30,6 +30,12 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-[#d6c7fa]">
       <div className="w-full max-w-xs bg-[#d6c7fa] rounded-2xl shadow-xl p-8 border border-black flex flex-col items-center relative">
         <div className="w-14 h-14 bg-yellow-400 rounded-full border-2 border-black absolute -top-7 left-1/2 -translate-x-1/2"></div>
+        
+        {location.state?.message && (
+          <div className="w-full p-3 bg-green-100 border border-green-500 text-green-700 rounded-lg text-sm text-center animate-bounce mt-4">
+            {location.state.message}
+          </div>
+        )}
         <form
           onSubmit={handleSubmit}
           className="w-full flex flex-col gap-6 mt-10"

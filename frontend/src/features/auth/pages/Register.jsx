@@ -14,16 +14,12 @@ export default function Register() {
     if (user) navigate("/")
   }, [user, navigate])
 
-  // Redirect to login after successful register
-  const [registered, setRegistered] = useState(false)
-  useEffect(() => {
-    if (registered) navigate("/login")
-  }, [registered, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     await register(name, email, password)
-    setRegistered(true)
+    // Navigate to login with success state
+    navigate("/login", { state: { message: "Account created! Please log in." } })
   }
 
   return (
