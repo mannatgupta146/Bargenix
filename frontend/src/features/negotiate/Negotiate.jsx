@@ -3,17 +3,23 @@ import React, { useState, useEffect, useRef } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 
 export default function Negotiate() {
-  const { startNegotiation, reset } = useNegotiate()
+  const {
+    startNegotiation,
+    makeOffer,
+    reset,
+    history: reduxHistory,
+    completed: reduxCompleted,
+    finalPrice: reduxFinalPrice,
+    loading: reduxLoading,
+    error: reduxError,
+  } = useNegotiate()
+
   const [offer, setOffer] = useState("")
   const [message, setMessage] = useState("")
-  const [history, setHistory] = useState([])
-  const [round, setRound] = useState(0)
-  const [aiPrice, setAiPrice] = useState(null)
-  const [completed, setCompleted] = useState(false)
-  const [finalPrice, setFinalPrice] = useState(null)
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+
   const [showVideo, setShowVideo] = useState(false)
   const [showFinalChoice, setShowFinalChoice] = useState(false)
   const [finalAccepted, setFinalAccepted] = useState(null) // null = not answered, true = yes, false = no
@@ -25,7 +31,6 @@ export default function Negotiate() {
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     let productId = params.get("product")
-    // If productId is missing, try to recover from localStorage and update URL
     if (!productId) {
       try {
         const lastSelected = JSON.parse(
@@ -42,38 +47,26 @@ export default function Negotiate() {
       setLoading(false)
       return
     }
-    // Load product details from localStorage or API
-    let found = false
+
     let prod = null
     try {
       const allProducts = JSON.parse(
         localStorage.getItem("bargenix_all_products"),
       )
       if (Array.isArray(allProducts)) {
-        // Try both string and numeric comparison for productId
         prod = allProducts.find(
           (p) => p.id === productId || String(p.id) === String(productId),
         )
         if (prod) {
           setProduct(prod)
-          setAiPrice(Number(prod.price))
           setLoading(false)
-          found = true
-          // Always reset and start a new negotiation session with productId
-          // Ensure reset completes before starting new negotiation
-          Promise.resolve()
-            .then(() => {
-              reset()
-            })
-            .then(() => {
-              setTimeout(() => startNegotiation(prod.id), 50)
-            })
+          reset()
+          setTimeout(() => startNegotiation(prod.id, Number(prod.price)), 50)
           return
         }
       }
     } catch (e) {}
 
-    // If not found in localStorage, try fetching from API directly
     fetch(`https://fakestoreapi.com/products/${productId}`)
       .then((res) => {
         if (!res.ok) throw new Error("Product not found")
@@ -81,13 +74,10 @@ export default function Negotiate() {
       })
       .then((data) => {
         setProduct(data)
-        setAiPrice(Number(data.price))
         setLoading(false)
-        // Optionally update localStorage for future lookups
         try {
           let allProducts =
             JSON.parse(localStorage.getItem("bargenix_all_products")) || []
-          // Only add if not already present
           if (
             !allProducts.find(
               (p) => p.id === data.id || String(p.id) === String(data.id),
@@ -100,14 +90,8 @@ export default function Negotiate() {
             )
           }
         } catch (e) {}
-        // Always reset and start a new negotiation session with productId
-        Promise.resolve()
-          .then(() => {
-            reset()
-          })
-          .then(() => {
-            setTimeout(() => startNegotiation(data.id), 50)
-          })
+        reset()
+        setTimeout(() => startNegotiation(data.id, Number(data.price)), 50)
       })
       .catch(() => {
         setError(
@@ -117,93 +101,42 @@ export default function Negotiate() {
       })
   }, [location.search, navigate])
 
-  const submitOffer = (e) => {
+  const submitOffer = async (e) => {
     e.preventDefault()
-    if (!offer || isNaN(Number(offer)) || completed || round >= 5) return
+    if (!offer || isNaN(Number(offer)) || reduxCompleted) return
     const userOffer = Number(offer)
-    let newAiPrice = aiPrice
-    let aiMsg = ""
-    let playFahh = true
-    const minPrice = Number(product.price) * 0.25
-    const origPrice = Number(product.price)
-    // Each round, AI drops by exactly 5% of original price, never more
-    const drop = origPrice * 0.05
-    let nextAiPrice = aiPrice - drop
-    if (nextAiPrice < minPrice) nextAiPrice = minPrice
-    newAiPrice = nextAiPrice
-    if (userOffer >= newAiPrice) {
-      aiMsg = `Deal! You got it for $${userOffer}`
-    } else if (newAiPrice === minPrice) {
-      aiMsg = "I can't go below this."
-      playFahh = true
-    } else {
-      aiMsg = `I can do $${newAiPrice.toFixed(2)}. Can you go higher?`
-    }
-    // If user offer is higher than AI price, show user's offer as the AI price in chat
-    const displayAiPrice = userOffer >= newAiPrice ? userOffer : newAiPrice
-    setHistory((h) => [
-      ...h,
-      {
-        userOffer,
-        userMessage: message,
-        aiCounter: displayAiPrice,
-        aiMessage: aiMsg,
-        round: round + 1,
-      },
-    ])
-    setAiPrice(newAiPrice)
-    setRound((r) => r + 1)
+
+    // Call backend API
+    await makeOffer(userOffer, message)
+
     setOffer("")
     setMessage("")
-    // After 5th attempt (round 4), always show Yes/No if user hasn't accepted
-    if (round === 4) {
-      if (userOffer >= minPrice) {
-        setCompleted(true)
-        setFinalPrice(userOffer)
-        setShowFinalChoice(false)
-        setFinalAccepted(true)
-        return
-      } else {
-        setCompleted(true)
-        setFinalPrice(newAiPrice)
-        setShowFinalChoice(true)
-        setFinalAccepted(null)
-        setTimeout(() => {
-          if (audioRef.current) {
-            audioRef.current.currentTime = 0
-            audioRef.current.play()
-          }
-        }, 200)
-        return
-      }
-    }
-    // If user accepts at any point before 5th round (AI price <= user offer and not at floor)
-    if (newAiPrice <= userOffer && newAiPrice > minPrice) {
-      setCompleted(true)
-      setFinalPrice(userOffer)
-      setShowFinalChoice(false)
-      setFinalAccepted(true)
-      return
-    }
+
+    // We don't need to manually update local history/completed anymore,
+    // as it will be synced from Redux in the next render.
+
     setTimeout(() => {
-      if (playFahh && audioRef.current) {
+      if (audioRef.current) {
         audioRef.current.currentTime = 0
         audioRef.current.play()
       }
     }, 200)
   }
 
-  if (loading) {
+  const isPending = loading || reduxLoading
+  const currentError = error || reduxError
+
+  if (isPending && !product) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg-main text-lg">
         Loading...
       </div>
     )
   }
-  if (error) {
+  if (currentError) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg-main text-lg text-red-600">
-        {error}
+        {currentError}
       </div>
     )
   }
@@ -268,7 +201,7 @@ export default function Negotiate() {
         </div>
         <div className="flex-1 flex flex-col justify-between">
           <div className="flex-1 flex flex-col gap-4 overflow-y-auto max-h-[60vh] pb-2">
-            {history.map((h, i) => (
+            {reduxHistory.map((h, i) => (
               <React.Fragment key={i}>
                 <div className="flex flex-col items-end mb-2">
                   <div className="bg-btn-main text-white px-3 py-2 rounded-xl max-w-[80%]">
@@ -280,22 +213,29 @@ export default function Negotiate() {
                 </div>
                 <div className="flex flex-col items-start mb-4">
                   <div className="bg-gray-200 text-black px-3 py-2 rounded-xl max-w-[80%]">
-                    <b>AI:</b> ${h.aiCounter.toFixed(2)}
+                    <b>AI:</b> ${h.aiCounter?.toFixed(2)}
                     {h.aiMessage && (
                       <div className="text-xs mt-1">{h.aiMessage}</div>
                     )}
                     {i > 0 &&
-                      history[i - 1].aiCounter > h.aiCounter &&
-                      i !== history.length - 1 && (
+                      reduxHistory[i - 1].aiCounter > h.aiCounter &&
+                      i !== reduxHistory.length - 1 && (
                         <div className="text-xs text-green-700 mt-1 font-semibold">
                           Price lessened by $
-                          {(history[i - 1].aiCounter - h.aiCounter).toFixed(2)}
+                          {(
+                            reduxHistory[i - 1].aiCounter - h.aiCounter
+                          ).toFixed(2)}
                         </div>
                       )}
                   </div>
                 </div>
               </React.Fragment>
             ))}
+            {isPending && (
+              <div className="text-sm text-gray-500 italic">
+                AI is thinking...
+              </div>
+            )}
           </div>
           <form
             onSubmit={submitOffer}
@@ -309,7 +249,7 @@ export default function Negotiate() {
               placeholder="Your offer"
               value={offer}
               onChange={(e) => setOffer(e.target.value)}
-              disabled={completed}
+              disabled={reduxCompleted || isPending}
               required
             />
             <input
@@ -318,46 +258,50 @@ export default function Negotiate() {
               placeholder="Message (optional)"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              disabled={completed}
+              disabled={reduxCompleted || isPending}
             />
             <button
               type="submit"
-              className="px-4 py-2 rounded bg-btn-main border border-black text-white font-bold"
-              disabled={completed}
+              className="px-4 py-2 rounded bg-btn-main border border-black text-white font-bold disabled:opacity-50"
+              disabled={reduxCompleted || isPending}
             >
-              {completed ? "Done" : "Send"}
+              {reduxCompleted ? "Done" : "Send"}
             </button>
           </form>
           <audio ref={audioRef} src="/FAHH.mp3" preload="auto" />
           <video ref={videoRef} src="/gareeb.mp4" style={{ display: "none" }} />
-          {completed && (
+          {reduxCompleted && (
             <div className="text-center mt-4">
-              {finalAccepted === false ? (
+              {reduxFinalPrice && !reduxHistory.some(h => h.aiMessage?.toLowerCase().includes("deal")) ? (
                 <div className="text-lg font-bold text-red-600 mb-2">
                   Negotiation Unsuccessful!
                 </div>
               ) : (
-                <>
-                  <div className="text-lg font-bold text-green-700 mb-2">
-                    Negotiation Successful!
-                  </div>
+                <div className="text-lg font-bold text-green-700 mb-2">
+                  Negotiation Successful!
+                </div>
+              )}
+              <div className="mb-2">
+                Final Price:{" "}
+                <span className="font-bold">
+                  ${reduxFinalPrice?.toFixed(2)}
+                </span>
+              </div>
+              {reduxFinalPrice &&
+                reduxHistory.some((h) =>
+                  h.aiMessage?.toLowerCase().includes("deal"),
+                ) && (
                   <button
                     className="px-4 py-2 rounded bg-btn-main border border-black text-white font-bold mt-2"
                     onClick={() => navigate("/leaderboard")}
                   >
                     Go to Leaderboard
                   </button>
-                </>
-              )}
-              <div className="mb-2">
-                Final Price:{" "}
-                <span className="font-bold">${finalPrice?.toFixed(2)}</span>
-              </div>
-              {/* Final choice at 25% floor */}
+                )}
               {showFinalChoice && finalAccepted === null && (
                 <div className="mb-4">
                   <div className="text-base font-semibold mb-2">
-                    Do you want to buy at this price (25% off)?
+                    Do you want to buy at this price?
                   </div>
                   <button
                     className="px-4 py-2 rounded bg-btn-main border border-black text-white font-bold mr-2"
@@ -386,31 +330,17 @@ export default function Negotiate() {
                   </button>
                 </div>
               )}
-              {showFinalChoice && finalAccepted === true && (
-                <>
-                  <div className="text-green-700 font-bold mb-2">
-                    Added to leaderboard!
-                  </div>
-                  <button
-                    className="px-4 py-2 rounded bg-btn-main border border-black text-white font-bold mt-2"
-                    onClick={() => navigate("/leaderboard")}
-                  >
-                    Go to Leaderboard
-                  </button>
-                </>
-              )}
               <button
                 onClick={() => {
-                  setHistory([])
-                  setRound(0)
-                  setAiPrice(Number(product.price))
-                  setCompleted(false)
-                  setFinalPrice(null)
+                  reset()
+                  setOffer("")
+                  setMessage("")
                   setShowVideo(false)
                   setShowFinalChoice(false)
                   setFinalAccepted(null)
+                  startNegotiation(product.id, Number(product.price))
                 }}
-                className="px-4 py-2 rounded bg-btn-main border border-black text-white font-bold mt-2"
+                className="px-4 py-2 rounded bg-btn-main border border-black text-white font-bold mt-2 ml-2"
               >
                 Start New Negotiation
               </button>

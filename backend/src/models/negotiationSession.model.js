@@ -13,6 +13,7 @@ const negotiationSessionSchema = new mongoose.Schema(
       default: "Fixed Product",
     },
     aiConstraints: {
+      startingPrice: { type: Number, required: true },
       minPrice: { type: Number, required: true },
       targetProfit: { type: Number, required: true },
       strategy: { type: String, required: true },
