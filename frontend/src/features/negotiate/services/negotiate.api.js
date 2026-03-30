@@ -3,14 +3,25 @@
 const API_BASE =
   import.meta.env.VITE_API_URL || "http://localhost:3000/api/game"
 
-export async function apiStartNegotiation(productId, basePrice) {
+export async function apiStartNegotiation(productId, basePrice, productName, productImage) {
   const res = await fetch(`${API_BASE}/start`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ productId, basePrice }),
+    body: JSON.stringify({ productId, basePrice, productName, productImage }),
   })
   if (!res.ok) throw new Error("Failed to start negotiation")
+  return res.json()
+}
+
+export async function apiAcceptFinalOffer(sessionId) {
+  const res = await fetch(`${API_BASE}/accept-final`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sessionId }),
+  })
+  if (!res.ok) throw new Error("Failed to accept final offer")
   return res.json()
 }
 

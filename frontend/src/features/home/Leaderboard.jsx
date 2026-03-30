@@ -24,6 +24,7 @@ export default function Leaderboard() {
               bestPrice: entry.bestPrice,
               date: entry.date,
               productName: entry.productName,
+              productImage: entry.productImage,
               originalPrice: entry.originalPrice,
               discountPercent: entry.discountPercent,
             })),
@@ -81,7 +82,7 @@ export default function Leaderboard() {
           Back
         </span>
       </button>
-      <div className="w-full max-w-3xl bg-bg-card rounded-2xl shadow-xl border-2 border-black p-8 flex flex-col items-center">
+      <div className="w-full max-w-5xl bg-bg-card rounded-2xl shadow-xl border-2 border-black p-8 flex flex-col items-center">
         <h2 className="text-4xl font-extrabold mb-6 text-center text-btn-main tracking-tight">
           🏆 Leaderboard
         </h2>
@@ -112,7 +113,14 @@ export default function Leaderboard() {
                   >
                     <td className="py-2 px-4 text-center">{idx + 1}</td>
                     <td className="py-2 px-4">{entry.username}</td>
-                    <td className="py-2 px-4">{entry.productName || "-"}</td>
+                    <td className="py-2 px-4">
+                      <div className="flex items-center gap-2 max-w-[180px]">
+                        {entry.productImage && (
+                          <img src={entry.productImage} alt="" className="w-8 h-8 object-contain rounded border border-black/10 bg-white flex-shrink-0" />
+                        )}
+                        <span className="truncate flex-1">{entry.productName || "-"}</span>
+                      </div>
+                    </td>
                     <td className="py-2 px-4">
                       {entry.originalPrice
                         ? `$${entry.originalPrice.toFixed(2)}`
