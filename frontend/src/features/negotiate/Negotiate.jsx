@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 
 export default function Negotiate() {
-  const { startNegotiation } = useNegotiate()
+  const { startNegotiation, reset } = useNegotiate()
   const [offer, setOffer] = useState("")
   const [message, setMessage] = useState("")
   const [history, setHistory] = useState([])
@@ -59,8 +59,15 @@ export default function Negotiate() {
           setAiPrice(Number(prod.price))
           setLoading(false)
           found = true
-          // Start negotiation session with productId
-          startNegotiation(prod.id)
+          // Always reset and start a new negotiation session with productId
+          // Ensure reset completes before starting new negotiation
+          Promise.resolve()
+            .then(() => {
+              reset()
+            })
+            .then(() => {
+              setTimeout(() => startNegotiation(prod.id), 50)
+            })
           return
         }
       }
@@ -93,8 +100,14 @@ export default function Negotiate() {
             )
           }
         } catch (e) {}
-        // Start negotiation session with productId
-        startNegotiation(data.id)
+        // Always reset and start a new negotiation session with productId
+        Promise.resolve()
+          .then(() => {
+            reset()
+          })
+          .then(() => {
+            setTimeout(() => startNegotiation(data.id), 50)
+          })
       })
       .catch(() => {
         setError(
