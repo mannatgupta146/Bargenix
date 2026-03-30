@@ -1,7 +1,6 @@
 // API layer for negotiation endpoints
 
-const API_BASE =
-  import.meta.env.VITE_API_URL || "http://localhost:3000/api/game"
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3000") + "/api/game"
 
 export async function apiStartNegotiation(productId, basePrice, productName, productImage) {
   const res = await fetch(`${API_BASE}/start`, {

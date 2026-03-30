@@ -1,6 +1,5 @@
 // API for products
-const API_BASE =
-  import.meta.env.VITE_API_URL || "http://localhost:3000/api/products"
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3000") + "/api/products"
 
 export async function fetchProducts() {
   const res = await fetch(`${API_BASE}`)
