@@ -1,39 +1,80 @@
 import NegotiationSession from "../models/negotiationSession.model.js"
+import Product from "../models/product.model.js"
 import LeaderboardEntry from "../models/leaderboardEntry.model.js"
 
-// Helper: Generate AI constraints relative to product price
-function generateAIConstraints(basePrice = 100) {
-  // Use 75% of base price as the absolute floor (25% discount)
-  const minPrice = Math.round(basePrice * 0.75)
-  return {
-    startingPrice: basePrice,
-    minPrice,
-    targetProfit: 10,
-    strategy: "standard",
+// Helper: Create Leaderboard Entry
+async function createLeaderboardEntry(req, session, priceValue, originalPriceValue) {
+  const finalPrice = Number(priceValue)
+  let finalOriginalPrice = Number(originalPriceValue)
+  let discountPercentValue = 0
+
+  const productId = session.product
+  let productName = session.productName || "Unknown"
+  let productImage = session.productImage || ""
+
+  console.log(`[Leaderboard] STARTING creation for user ${req.user?._id} and product ${productId}`)
+  try {
+    if (productId) {
+      // Safely try to find product if it looks like a valid MongoDB ID
+      try {
+        const isOid = productId.length === 24 && /^[0-9a-fA-F]+$/.test(productId)
+        if (isOid) {
+          const prod = await Product.findById(productId)
+          if (prod) {
+            productName = prod.name
+            finalOriginalPrice = Number(prod.price)
+            productImage = prod.image || ""
+            console.log(`[Leaderboard] Local product found: ${productName}`)
+          }
+        }
+      } catch (e) {
+        console.log(`[Leaderboard] Product lookup skipped for ID: ${productId}`)
+      }
+    }
+    
+    if (finalOriginalPrice > 0) {
+      discountPercentValue = ((finalOriginalPrice - finalPrice) / finalOriginalPrice) * 100
+    }
+
+    const entryData = {
+      user: req.user._id,
+      productId: productId || "unknown",
+      productName,
+      productImage,
+      originalPrice: finalOriginalPrice,
+      bestPrice: finalPrice,
+      discountPercent: discountPercentValue,
+      date: new Date(),
+    }
+    console.log(`[Leaderboard] FINAL ENTRY DATA:`, JSON.stringify(entryData, null, 2))
+    const newEntry = await LeaderboardEntry.create(entryData)
+    console.log(`[Leaderboard] SUCCESS: Entry created with ID ${newEntry._id}`)
+    return newEntry
+  } catch (err) {
+    console.error("[Leaderboard] CRITICAL ERROR during creation:", err)
   }
 }
 
 // Start a new negotiation session
-// Initialize a negotiation session
 export const startNegotiation = async (req, res) => {
   try {
     const { productId, basePrice, productName, productImage } = req.body
-    if (!productId) {
-      return res.status(400).json({ message: "Product ID is required" })
-    }
-
-    const actualPrice = Number(basePrice) || 100
-    const aiConstraints = generateAIConstraints(actualPrice)
-
+    
+    // Generate AI constraints based on basePrice
+    const startingPrice = basePrice || 100
+    const minPrice = startingPrice * 0.75 // 25% max discount
+    
     const session = new NegotiationSession({
       user: req.user._id,
       product: productId,
-      productName: productName || "Unknown Product",
-      productImage: productImage || "",
-      aiConstraints,
-      rounds: [],
+      productName,
+      productImage,
+      aiConstraints: {
+        startingPrice,
+        minPrice
+      }
     })
-
+    
     await session.save()
     res.status(201).json(session)
   } catch (err) {
@@ -41,61 +82,12 @@ export const startNegotiation = async (req, res) => {
   }
 }
 
-// Helper: Create Leaderboard Entry
-async function createLeaderboardEntry(req, session, finalPrice, originalPriceFromConstraints) {
-  let productId = session.product
-  let productName = session.productName || "Unknown"
-  let productImage = session.productImage || ""
-  let originalPriceFromDb = originalPriceFromConstraints
-  let discountPercentValue = 0
-
-  try {
-    if (productId) {
-      const Product = (await import("../models/product.model.js")).default
-      let prod = null
-      const isObjectId = /^[0-9a-fA-F]{24}$/.test(productId)
-      if (isObjectId) {
-        prod = await Product.findById(productId)
-      } else {
-        prod = await Product.findOne({
-          $or: [{ _id: productId }, { name: new RegExp(productId, "i") }],
-        })
-      }
-      if (prod) {
-        productName = prod.name
-        originalPriceFromDb = prod.price
-        productImage = prod.image || ""
-      }
-    }
-  } catch (e) {
-    console.error("[Leaderboard] Product lookup error:", e.message)
-  }
-
-  const finalOriginalPrice = originalPriceFromDb || originalPriceFromConstraints
-  if (finalOriginalPrice && finalPrice) {
-    discountPercentValue =
-      ((finalOriginalPrice - finalPrice) / finalOriginalPrice) * 100
-  }
-
-  const entryData = {
-    user: req.user._id,
-    productId: productId || "unknown",
-    productName,
-    productImage,
-    originalPrice: finalOriginalPrice,
-    bestPrice: finalPrice,
-    discountPercent: discountPercentValue,
-    date: new Date(),
-  }
-  console.log("[Leaderboard] Creating entry:", entryData)
-  return await LeaderboardEntry.create(entryData)
-}
-
-// Make an offer in a negotiation round
+// Make an offer
 export const makeOffer = async (req, res) => {
   try {
     const { sessionId, userOffer, userMessage } = req.body
     const session = await NegotiationSession.findById(sessionId)
+    
     if (!session || session.completed) {
       return res.status(400).json({ message: "Invalid or completed session" })
     }
@@ -160,14 +152,16 @@ export const makeOffer = async (req, res) => {
   }
 }
 
-// Accept the final offer
+// Accept final offer (Yes on modal)
 export const acceptFinalOffer = async (req, res) => {
   try {
     const { sessionId } = req.body
     const session = await NegotiationSession.findById(sessionId)
-    if (!session) return res.status(404).json({ message: "Session not found" })
     
-    // Record as deal in leaderboard if not already recorded
+    if (!session) {
+      return res.status(404).json({ message: "Session not found" })
+    }
+
     const isAlreadyDeal = session.rounds.some(r => r.aiMessage && r.aiMessage.includes("Deal!"))
     if (!isAlreadyDeal && session.finalPrice) {
       await createLeaderboardEntry(req, session, session.finalPrice, session.aiConstraints.startingPrice)
@@ -185,6 +179,10 @@ export const acceptFinalOffer = async (req, res) => {
 export const getLeaderboard = async (req, res) => {
   try {
     let entries = await LeaderboardEntry.find().populate("user", "name")
+    console.log(`[Leaderboard] Found ${entries.length} total entries in DB`)
+    if (entries.length > 0) {
+      console.log(`[Leaderboard] Latest 3 entries (raw IDs):`, entries.slice(-3).map(e => e._id))
+    }
     // Calculate discount percentage for each entry
     entries = entries.map((entry) => {
       let percent = 0
@@ -197,15 +195,13 @@ export const getLeaderboard = async (req, res) => {
         discountPercent: percent,
       }
     })
-    // Sort: highest discount (lowest price) at top, then by bestPrice
+    // Sort: Highest discount first
     entries.sort((a, b) => {
-      // Sort by discount descending, then by bestPrice ascending
-      if (b.discountPercent !== a.discountPercent) {
+      if (Math.abs(b.discountPercent - a.discountPercent) > 0.1) {
         return b.discountPercent - a.discountPercent
       }
       return a.bestPrice - b.bestPrice
     })
-    // Show all entries (no limit)
     res.json(entries)
   } catch (err) {
     res.status(500).json({ message: err.message })

@@ -146,51 +146,59 @@ export default function Leaderboard() {
           </div>
         )}
         {selected && (
-          <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/40">
-            <div className="bg-bg-card rounded-2xl shadow-2xl border-2 border-btn-main p-8 min-w-[320px] max-w-[90vw] relative animate-fadeIn flex flex-col items-center">
+          <div className="fixed inset-0 flex items-center justify-center z-[100] bg-black/60 backdrop-blur-sm p-4">
+            <div className="bg-bg-card rounded-2xl shadow-2xl border border-black p-8 w-full max-w-sm relative animate-fadeIn">
               <button
-                className="absolute top-3 right-3 text-2xl text-btn-main hover:text-red-600 font-bold"
+                className="absolute top-4 right-4 text-3xl text-btn-main hover:text-red-600 font-bold transition-colors"
                 onClick={() => setSelected(null)}
-                aria-label="Close"
               >
                 ×
               </button>
-              <h3 className="text-2xl font-bold mb-4 text-btn-main text-center">
+              
+              <h3 className="text-2xl font-bold mb-6 text-center text-btn-main uppercase tracking-tight border-b border-black/10 pb-2">
                 Deal Details
               </h3>
-              {/* Product image if available */}
-              {selected.productImage && (
-                <img
-                  src={selected.productImage}
-                  alt={selected.productName}
-                  className="w-28 h-28 object-contain rounded bg-white border border-black mb-3 shadow"
-                />
-              )}
-              <div className="mb-2 text-lg">
-                <b>User:</b> {selected.username}
+
+              <div className="flex flex-col items-center mb-6">
+                {selected.productImage ? (
+                  <img
+                    src={selected.productImage}
+                    alt={selected.productName}
+                    className="w-40 h-40 object-contain rounded-2xl bg-white border border-black/20 p-2 shadow-sm mb-4"
+                  />
+                ) : (
+                  <div className="w-32 h-32 bg-gray-100 rounded-2xl border-2 border-black border-dashed flex items-center justify-center text-gray-400 mb-4">
+                    No Image
+                  </div>
+                )}
+                <h4 className="text-xl font-bold text-black text-center leading-tight">
+                  {selected.productName || "Unknown Product"}
+                </h4>
               </div>
-              <div className="mb-2 text-lg">
-                <b>Product:</b> {selected.productName || "-"}
+
+              <div className="space-y-3 w-full">
+                <div className="flex justify-between items-center bg-bg-main/30 p-2 rounded-xl border border-black/10">
+                  <span className="font-bold text-gray-700">User:</span>
+                  <span className="font-black text-btn-main">{selected.username}</span>
+                </div>
+                <div className="flex justify-between items-center bg-bg-main/30 p-2 rounded-xl border border-black/10">
+                  <span className="font-bold text-gray-700">Actual Price:</span>
+                  <span className="font-black text-gray-900">${selected.originalPrice?.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center bg-bg-main/30 p-2 rounded-xl border border-black/10">
+                  <span className="font-bold text-gray-700">Bought At:</span>
+                  <span className="font-black text-green-600 text-lg">${selected.bestPrice?.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center bg-accent/20 p-2 rounded-xl border border-black/10">
+                  <span className="font-bold text-gray-700">Discount:</span>
+                  <span className="font-black text-black px-2 py-0.5 bg-accent rounded-lg border border-black">
+                    {selected.discountPercent?.toFixed(1)}%
+                  </span>
+                </div>
               </div>
-              <div className="mb-2 text-lg">
-                <b>Actual Price:</b>{" "}
-                {selected.originalPrice
-                  ? `$${selected.originalPrice.toFixed(2)}`
-                  : "-"}
-              </div>
-              <div className="mb-2 text-lg">
-                <b>Bought At:</b>{" "}
-                {selected.bestPrice ? `$${selected.bestPrice.toFixed(2)}` : "-"}
-              </div>
-              <div className="mb-2 text-lg">
-                <b>Discount %:</b>{" "}
-                {selected.discountPercent !== undefined
-                  ? `${selected.discountPercent.toFixed(1)}%`
-                  : "-"}
-              </div>
-              <div className="mb-2 text-lg">
-                <b>Date:</b>{" "}
-                {selected.date ? new Date(selected.date).toLocaleString() : "-"}
+
+              <div className="mt-6 text-center text-xs text-gray-500 font-medium">
+                Closed on {selected.date ? new Date(selected.date).toLocaleString() : "-"}
               </div>
             </div>
           </div>
