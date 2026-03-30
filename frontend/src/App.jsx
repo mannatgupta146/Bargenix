@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom"
+import Leaderboard from "./features/home/Leaderboard.jsx"
 
 import Login from "./features/auth/pages/Login.jsx"
 import Register from "./features/auth/pages/Register.jsx"
@@ -9,6 +9,7 @@ import ProductList from "./features/products/ProductList.jsx"
 import { useSelector } from "react-redux"
 import { useEffect } from "react"
 import { useAuth } from "./features/auth/hooks/useAuth"
+import { Navigate, useNavigate, Routes, Route } from "react-router-dom"
 
 export default function App() {
   // Persist user on reload
@@ -89,6 +90,14 @@ export default function App() {
         element={
           <Protected>
             <Profile />
+          </Protected>
+        }
+      />
+      <Route
+        path="/leaderboard"
+        element={
+          <Protected>
+            <Leaderboard />
           </Protected>
         }
       />

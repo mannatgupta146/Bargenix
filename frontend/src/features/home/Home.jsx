@@ -1,8 +1,10 @@
 import React from "react"
 import { useAuth } from "../auth/hooks/useAuth"
+import { useNavigate } from "react-router-dom"
 
 export default function Home({ onStartNegotiation }) {
   const { user, logout } = useAuth()
+  const navigate = useNavigate()
   // Fallback handler if not provided
   const handleStart =
     onStartNegotiation || (() => alert("Negotiation feature coming soon!"))
@@ -56,19 +58,29 @@ export default function Home({ onStartNegotiation }) {
           </p>
         </div>
 
-        {/* 🔥 CTA MOVED UP */}
-        <button
-          onClick={handleStart}
-          className="w-full max-w-xs py-5 mb-10 rounded-2xl bg-btn-main border-2 border-black text-white font-extrabold text-xl relative overflow-hidden hover:scale-105 transition shadow-xl"
-        >
-          <span className="absolute inset-0 flex items-center justify-center z-10">
-            Start Negotiation
-          </span>
-
-          <span className="absolute inset-0 rounded-2xl border-black border-2 pointer-events-none z-20"></span>
-
-          <span className="absolute inset-0 rounded-2xl bg-[repeating-linear-gradient(-45deg,_var(--stripe)_0px,_var(--stripe)_8px,_var(--btn-main)_8px,_var(--btn-main)_16px)] opacity-30 pointer-events-none z-0"></span>
-        </button>
+        {/* CTA BUTTONS */}
+        <div className="flex flex-col md:flex-row gap-4 w-full max-w-2xl mb-10 justify-center">
+          <button
+            onClick={handleStart}
+            className="flex-1 py-5 rounded-2xl bg-btn-main border-2 border-black text-white font-extrabold text-xl relative overflow-hidden hover:scale-105 transition shadow-xl"
+          >
+            <span className="absolute inset-0 flex items-center justify-center z-10">
+              Start Negotiation
+            </span>
+            <span className="absolute inset-0 rounded-2xl border-black border-2 pointer-events-none z-20"></span>
+            <span className="absolute inset-0 rounded-2xl bg-[repeating-linear-gradient(-45deg,_var(--stripe)_0px,_var(--stripe)_8px,_var(--btn-main)_8px,_var(--btn-main)_16px)] opacity-30 pointer-events-none z-0"></span>
+          </button>
+          <button
+            onClick={() => navigate("/leaderboard")}
+            className="flex-1 py-5 rounded-2xl bg-accent border-2 border-black text-black font-extrabold text-xl relative overflow-hidden hover:scale-105 transition shadow-xl"
+          >
+            <span className="absolute inset-0 flex items-center justify-center z-10">
+              Leaderboard
+            </span>
+            <span className="absolute inset-0 rounded-2xl border-black border-2 pointer-events-none z-20"></span>
+            <span className="absolute inset-0 rounded-2xl bg-[repeating-linear-gradient(-45deg,_var(--stripe)_0px,_var(--stripe)_8px,_var(--accent)_8px,_var(--accent)_16px)] opacity-20 pointer-events-none z-0"></span>
+          </button>
+        </div>
 
         {/* SECTION LABEL */}
         <div className="mb-4 text-xs text-gray-700 uppercase tracking-widest">
@@ -98,7 +110,10 @@ export default function Home({ onStartNegotiation }) {
               <div className="mt-4 h-1 w-12 bg-accent rounded"></div>
             </div>
 
-            <div className="flex-1 p-5 rounded-xl border border-black/20 backdrop-blur-md bg-white/30 shadow-md hover:shadow-xl transition hover:-translate-y-1">
+            <div
+              className="flex-1 p-5 rounded-xl border border-black/20 backdrop-blur-md bg-white/30 shadow-md hover:shadow-xl transition hover:-translate-y-1 cursor-pointer"
+              onClick={() => navigate("/leaderboard")}
+            >
               <h3 className="text-lg font-bold text-black mb-1 text-left">
                 Leaderboard
               </h3>

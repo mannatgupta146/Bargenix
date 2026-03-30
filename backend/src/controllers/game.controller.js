@@ -13,9 +13,14 @@ function generateAIConstraints() {
 // Start a new negotiation session
 export const startNegotiation = async (req, res) => {
   try {
+    const { productId } = req.body
+    if (!productId) {
+      return res.status(400).json({ message: "Product ID is required" })
+    }
     const aiConstraints = generateAIConstraints()
     const session = await NegotiationSession.create({
       user: req.user._id,
+      product: productId,
       aiConstraints,
     })
     res.status(201).json(session)
@@ -66,15 +71,40 @@ export const makeOffer = async (req, res) => {
     if (userOffer >= trueMin) {
       session.finalPrice = userOffer
       session.completed = true
-      // Update leaderboard
-      let entry = await LeaderboardEntry.findOne({ user: req.user._id })
-      if (!entry || userOffer < entry.bestPrice) {
-        await LeaderboardEntry.findOneAndUpdate(
-          { user: req.user._id },
-          { bestPrice: userOffer, date: new Date() },
-          { upsert: true, new: true },
-        )
+      // Update leaderboard with product info
+      // Try to get product info from session.product (should be productId)
+      let productId = session.product
+      let productName = "Unknown"
+      let productImage = ""
+      let originalPrice = startingPrice
+      let discountPercent = 0
+      try {
+        if (productId) {
+          const Product = (await import("../models/product.model.js")).default
+          const prod = await Product.findOne({ _id: productId })
+          if (prod) {
+            productName = prod.name
+            originalPrice = prod.price
+            productImage = prod.image || ""
+          }
+        }
+      } catch (e) {}
+      if (originalPrice && userOffer) {
+        discountPercent = ((originalPrice - userOffer) / originalPrice) * 100
       }
+      // Always create a new leaderboard entry for every successful negotiation
+      const entryData = {
+        user: req.user._id,
+        productId: productId || "unknown",
+        productName,
+        productImage,
+        originalPrice,
+        bestPrice: userOffer,
+        discountPercent,
+        date: new Date(),
+      }
+      console.log("[Leaderboard] Creating entry:", entryData)
+      await LeaderboardEntry.create(entryData)
     }
     await session.save()
     res.json({
@@ -92,11 +122,29 @@ export const makeOffer = async (req, res) => {
 // Get leaderboard
 export const getLeaderboard = async (req, res) => {
   try {
-    const top = await LeaderboardEntry.find()
-      .sort({ bestPrice: 1 })
-      .limit(10)
-      .populate("user", "name")
-    res.json(top)
+    let entries = await LeaderboardEntry.find().populate("user", "name")
+    // Calculate discount percentage for each entry
+    entries = entries.map((entry) => {
+      let percent = 0
+      if (entry.originalPrice && entry.bestPrice) {
+        percent =
+          ((entry.originalPrice - entry.bestPrice) / entry.originalPrice) * 100
+      }
+      return {
+        ...entry.toObject(),
+        discountPercent: percent,
+      }
+    })
+    // Sort: highest discount (lowest price) at top, then by bestPrice
+    entries.sort((a, b) => {
+      // Sort by discount descending, then by bestPrice ascending
+      if (b.discountPercent !== a.discountPercent) {
+        return b.discountPercent - a.discountPercent
+      }
+      return a.bestPrice - b.bestPrice
+    })
+    // Show all entries (no limit)
+    res.json(entries)
   } catch (err) {
     res.status(500).json({ message: err.message })
   }

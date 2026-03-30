@@ -3,9 +3,9 @@ import { apiStartNegotiation, apiMakeOffer } from "./services/negotiate.api"
 
 export const startNegotiationThunk = createAsyncThunk(
   "negotiate/startNegotiation",
-  async (_, { rejectWithValue }) => {
+  async (productId, { rejectWithValue }) => {
     try {
-      return await apiStartNegotiation()
+      return await apiStartNegotiation(productId)
     } catch (err) {
       return rejectWithValue(err.message)
     }

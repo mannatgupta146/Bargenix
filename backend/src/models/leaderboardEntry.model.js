@@ -7,7 +7,27 @@ const leaderboardEntrySchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    productId: {
+      type: String,
+      required: true,
+    },
+    productName: {
+      type: String,
+      required: true,
+    },
+    productImage: {
+      type: String,
+      required: false,
+    },
+    originalPrice: {
+      type: Number,
+      required: true,
+    },
     bestPrice: {
+      type: Number,
+      required: true,
+    },
+    discountPercent: {
       type: Number,
       required: true,
     },

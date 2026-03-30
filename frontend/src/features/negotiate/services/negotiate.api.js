@@ -3,11 +3,12 @@
 const API_BASE =
   import.meta.env.VITE_API_URL || "http://localhost:3000/api/game"
 
-export async function apiStartNegotiation() {
+export async function apiStartNegotiation(productId) {
   const res = await fetch(`${API_BASE}/start`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ productId }),
   })
   if (!res.ok) throw new Error("Failed to start negotiation")
   return res.json()

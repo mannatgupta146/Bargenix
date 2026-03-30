@@ -1,7 +1,9 @@
+import { useNegotiate } from "./hooks/useNegotiate"
 import React, { useState, useEffect, useRef } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 
 export default function Negotiate() {
+  const { startNegotiation } = useNegotiate()
   const [offer, setOffer] = useState("")
   const [message, setMessage] = useState("")
   const [history, setHistory] = useState([])
@@ -40,71 +42,31 @@ export default function Negotiate() {
       setLoading(false)
       return
     }
-    if (productId.includes("-x")) {
-      // Try to load from all products in localStorage
-      let found = false
-      try {
-        const allProducts = JSON.parse(
-          localStorage.getItem("bargenix_all_products"),
+    // Load product details from localStorage or API
+    let found = false
+    let prod = null
+    try {
+      const allProducts = JSON.parse(
+        localStorage.getItem("bargenix_all_products"),
+      )
+      if (Array.isArray(allProducts)) {
+        // Try both string and numeric comparison for productId
+        prod = allProducts.find(
+          (p) => p.id === productId || String(p.id) === String(productId),
         )
-        if (Array.isArray(allProducts)) {
-          const prod = allProducts.find((p) => p.id === productId)
-          if (prod) {
-            setProduct(prod)
-            setAiPrice(Number(prod.price))
-            setLoading(false)
-            found = true
-            return
-          }
+        if (prod) {
+          setProduct(prod)
+          setAiPrice(Number(prod.price))
+          setLoading(false)
+          found = true
+          // Start negotiation session with productId
+          startNegotiation(prod.id)
+          return
         }
-      } catch (e) {}
-      if (!found) {
-        // Fallback: fetch and reconstruct products
-        fetch("https://fakestoreapi.com/products")
-          .then((res) => res.json())
-          .then((data) => {
-            let products = data
-            if (products.length < 50) {
-              const needed = 50 - products.length
-              let extra = []
-              for (let i = 0; i < needed; i++) {
-                const base = products[i % products.length]
-                extra.push({
-                  ...base,
-                  id: base.id + "-x" + (i + 1),
-                  title: base.title + " (Var " + (i + 1) + ")",
-                  price: (parseFloat(base.price) + (i + 1) * 1.11).toFixed(2),
-                })
-              }
-              products = [...products, ...extra]
-            }
-            try {
-              localStorage.setItem(
-                "bargenix_all_products",
-                JSON.stringify(products),
-              )
-            } catch (e) {}
-            const prod = products.find((p) => p.id === productId)
-            if (prod) {
-              setProduct(prod)
-              setAiPrice(Number(prod.price))
-              setLoading(false)
-            } else {
-              setError(
-                "Product not found. Please select again from the product list.",
-              )
-              setLoading(false)
-            }
-          })
-          .catch(() => {
-            setError(
-              "Product not found. Please select again from the product list.",
-            )
-            setLoading(false)
-          })
-        return
       }
-    }
+    } catch (e) {}
+
+    // If not found in localStorage, try fetching from API directly
     fetch(`https://fakestoreapi.com/products/${productId}`)
       .then((res) => {
         if (!res.ok) throw new Error("Product not found")
@@ -114,9 +76,30 @@ export default function Negotiate() {
         setProduct(data)
         setAiPrice(Number(data.price))
         setLoading(false)
+        // Optionally update localStorage for future lookups
+        try {
+          let allProducts =
+            JSON.parse(localStorage.getItem("bargenix_all_products")) || []
+          // Only add if not already present
+          if (
+            !allProducts.find(
+              (p) => p.id === data.id || String(p.id) === String(data.id),
+            )
+          ) {
+            allProducts.push(data)
+            localStorage.setItem(
+              "bargenix_all_products",
+              JSON.stringify(allProducts),
+            )
+          }
+        } catch (e) {}
+        // Start negotiation session with productId
+        startNegotiation(data.id)
       })
       .catch(() => {
-        setError("Failed to load product. Please try again later.")
+        setError(
+          "Product not found. Please select again from the product list.",
+        )
         setLoading(false)
       })
   }, [location.search, navigate])
@@ -341,9 +324,17 @@ export default function Negotiate() {
                   Negotiation Unsuccessful!
                 </div>
               ) : (
-                <div className="text-lg font-bold text-green-700 mb-2">
-                  Negotiation Successful!
-                </div>
+                <>
+                  <div className="text-lg font-bold text-green-700 mb-2">
+                    Negotiation Successful!
+                  </div>
+                  <button
+                    className="px-4 py-2 rounded bg-btn-main border border-black text-white font-bold mt-2"
+                    onClick={() => navigate("/leaderboard")}
+                  >
+                    Go to Leaderboard
+                  </button>
+                </>
               )}
               <div className="mb-2">
                 Final Price:{" "}
@@ -360,7 +351,6 @@ export default function Negotiate() {
                     onClick={() => {
                       setShowFinalChoice(false)
                       setFinalAccepted(true)
-                      setTimeout(() => alert("Added to leaderboard!"), 100)
                     }}
                   >
                     Yes
@@ -384,9 +374,17 @@ export default function Negotiate() {
                 </div>
               )}
               {showFinalChoice && finalAccepted === true && (
-                <div className="text-green-700 font-bold mb-2">
-                  Added to leaderboard!
-                </div>
+                <>
+                  <div className="text-green-700 font-bold mb-2">
+                    Added to leaderboard!
+                  </div>
+                  <button
+                    className="px-4 py-2 rounded bg-btn-main border border-black text-white font-bold mt-2"
+                    onClick={() => navigate("/leaderboard")}
+                  >
+                    Go to Leaderboard
+                  </button>
+                </>
               )}
               <button
                 onClick={() => {
