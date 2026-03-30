@@ -82,7 +82,7 @@ export default function Leaderboard() {
           Back
         </span>
       </button>
-      <div className="w-full max-w-5xl bg-bg-card rounded-2xl shadow-xl border-2 border-black p-8 flex flex-col items-center">
+      <div className="w-full max-w-5xl h-[85vh] max-h-[750px] bg-bg-card rounded-2xl shadow-xl border-2 border-black p-8 flex flex-col items-center overflow-hidden">
         <h2 className="text-4xl font-extrabold mb-6 text-center text-btn-main tracking-tight">
           🏆 Leaderboard
         </h2>
@@ -91,17 +91,17 @@ export default function Leaderboard() {
             No deals yet. Negotiate to get on the leaderboard!
           </div>
         ) : (
-          <div className="w-full overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
+          <div className="w-full overflow-x-auto overflow-y-auto custom-scrollbar pr-2 flex-1">
+            <table className="w-full text-left border-separate border-spacing-0">
+              <thead className="sticky top-0 z-20 shadow-sm">
                 <tr className="bg-bg-main">
-                  <th className="py-2 px-4 text-lg">Rank</th>
-                  <th className="py-2 px-4 text-lg">User</th>
-                  <th className="py-2 px-4 text-lg">Product</th>
-                  <th className="py-2 px-4 text-lg">Actual Price ($)</th>
-                  <th className="py-2 px-4 text-lg">Bought At ($)</th>
-                  <th className="py-2 px-4 text-lg">Discount %</th>
-                  <th className="py-2 px-4 text-lg">Date</th>
+                  <th className="py-3 px-4 text-lg border-b border-black">Rank</th>
+                  <th className="py-3 px-4 text-lg border-b border-black">User</th>
+                  <th className="py-3 px-4 text-lg border-b border-black">Product</th>
+                  <th className="py-3 px-4 text-lg border-b border-black">Actual Price ($)</th>
+                  <th className="py-3 px-4 text-lg border-b border-black">Bought At ($)</th>
+                  <th className="py-3 px-4 text-lg border-b border-black">Discount %</th>
+                  <th className="py-3 px-4 text-lg border-b border-black text-right">Date</th>
                 </tr>
               </thead>
               <tbody>

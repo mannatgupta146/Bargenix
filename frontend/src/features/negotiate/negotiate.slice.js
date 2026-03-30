@@ -42,6 +42,7 @@ const initialState = {
   error: "",
   completed: false,
   finalPrice: null,
+  finalAccepted: null, // null = not chosen, true = accepted, false = rejected
 }
 
 const negotiateSlice = createSlice({
@@ -50,6 +51,9 @@ const negotiateSlice = createSlice({
   reducers: {
     resetNegotiation: (state) => {
       Object.assign(state, initialState)
+    },
+    setFinalAccepted: (state, action) => {
+      state.finalAccepted = action.payload
     },
   },
   extraReducers: (builder) => {
@@ -104,5 +108,5 @@ const negotiateSlice = createSlice({
   },
 })
 
-export const { resetNegotiation } = negotiateSlice.actions
+export const { resetNegotiation, setFinalAccepted } = negotiateSlice.actions
 export default negotiateSlice.reducer

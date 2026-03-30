@@ -4,6 +4,7 @@ import {
   makeOfferThunk,
   acceptFinalOfferThunk,
   resetNegotiation,
+  setFinalAccepted,
 } from "../negotiate.slice"
 
 export function useNegotiate() {
@@ -30,5 +31,6 @@ export function useNegotiate() {
     makeOffer,
     acceptFinal,
     reset,
+    setFinalAccepted: (val) => dispatch(setFinalAccepted(val)),
   }
 }

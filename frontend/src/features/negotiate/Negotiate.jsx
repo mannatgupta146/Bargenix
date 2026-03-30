@@ -11,6 +11,8 @@ export default function Negotiate() {
     history: reduxHistory,
     completed: reduxCompleted,
     finalPrice: reduxFinalPrice,
+    finalAccepted: reduxFinalAccepted,
+    setFinalAccepted: reduxSetFinalAccepted,
     loading: reduxLoading,
     error: reduxError,
   } = useNegotiate()
@@ -23,11 +25,15 @@ export default function Negotiate() {
 
   const [showVideo, setShowVideo] = useState(false)
   const [showFinalChoice, setShowFinalChoice] = useState(false)
-  const [finalAccepted, setFinalAccepted] = useState(null)
   const audioRef = useRef(null)
   const videoRef = useRef(null)
+  const chatEndRef = useRef(null)
   const navigate = useNavigate()
   const location = useLocation()
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [reduxHistory])
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
@@ -118,15 +124,18 @@ export default function Negotiate() {
   }
 
   useEffect(() => {
+    console.log("[Negotiate] Checking for final choice:", { reduxCompleted, reduxFinalPrice, reduxLoading, roundsCount: reduxHistory.length })
     if (reduxCompleted && reduxFinalPrice && !reduxLoading) {
       const dealReached = reduxHistory.some((h) =>
-        h.aiMessage?.toLowerCase().includes("deal"),
+        h.aiMessage?.includes("Deal!"),
       )
-      if (!dealReached && finalAccepted === null) {
+      console.log("[Negotiate] Deal reached state:", dealReached)
+      if (!dealReached && reduxFinalAccepted === null) {
+        console.log("[Negotiate] SHOWING FINAL CHOICE MODAL")
         setShowFinalChoice(true)
       }
     }
-  }, [reduxCompleted, reduxFinalPrice, reduxLoading, reduxHistory, finalAccepted])
+  }, [reduxCompleted, reduxFinalPrice, reduxLoading, reduxHistory, reduxFinalAccepted])
 
   const isPending = loading || reduxLoading
   const currentError = error || reduxError
@@ -160,42 +169,65 @@ export default function Negotiate() {
         <span>Back</span>
       </button>
 
-      <div className="w-full max-w-4xl flex flex-col md:flex-row gap-8 bg-bg-card rounded-2xl shadow-xl p-8 border border-black items-stretch relative">
-        <div className="flex-1 flex flex-col items-center md:items-start justify-center gap-4 border-r border-black/20 pr-8">
-          <img
-            src={product.image}
-            alt={product.title}
-            className="w-40 h-40 object-contain rounded bg-white border border-black mb-2"
-          />
-          <h2 className="text-2xl font-extrabold text-black mb-1">
-            {product.title}
-          </h2>
-          <div className="text-xl font-bold text-btn-main mb-2">
-            ${product.price}
+      <div className="w-full max-w-5xl h-[85vh] max-h-[750px] flex flex-col md:flex-row gap-8 bg-bg-card rounded-2xl shadow-xl p-8 border border-black items-stretch relative overflow-hidden">
+        <div className="flex-1 flex flex-col items-center md:items-start md:pr-8 border-b md:border-b-0 md:border-r border-black/10 overflow-hidden pb-6 md:pb-0">
+          <div className="w-full h-48 flex items-center justify-center bg-white rounded-2xl border border-black/5 mb-6 p-4 shadow-inner">
+            <img
+              src={product.image}
+              alt={product.title}
+              className="w-full h-full object-contain"
+            />
           </div>
-          <div className="text-sm text-gray-700 mb-2 opacity-90 max-w-xs">
-            {product.description}
+          
+          <div className="w-full overflow-y-auto pr-2 custom-scrollbar flex-1">
+            <h2 className="text-2xl font-black text-black leading-tight mb-2 tracking-tight">
+              {product.title}
+            </h2>
+            
+            <div className="inline-block px-4 py-1 bg-btn-main/10 text-btn-main rounded-full font-bold text-xl mb-4 border border-btn-main/20">
+              ${product.price}
+            </div>
+
+            <div className="text-sm text-gray-600 leading-relaxed opacity-80">
+              {product.description}
+            </div>
           </div>
         </div>
 
         <div className="flex-1 flex flex-col justify-between">
           <div className="flex-1 flex flex-col gap-4 overflow-y-auto max-h-[60vh] pb-2">
-            {reduxHistory.map((h, i) => (
-              <React.Fragment key={i}>
-                <div className="flex flex-col items-end mb-2">
-                  <div className="bg-btn-main text-white px-3 py-2 rounded-xl max-w-[80%] border border-black/10">
-                    <b>You:</b> ${h.userOffer}
-                    {h.userMessage && <div className="text-xs mt-1">{h.userMessage}</div>}
-                  </div>
+            <div className="flex-1 overflow-y-auto mb-4 space-y-4 pr-2 custom-scrollbar">
+              {reduxHistory.length === 0 && !isPending && (
+                <div className="h-full flex items-center justify-center text-gray-400 italic text-center px-4">
+                  Make an offer to start the negotiation! You have 5 attempts.
                 </div>
-                <div className="flex flex-col items-start mb-4">
-                  <div className="bg-gray-200 text-black px-3 py-2 rounded-xl max-w-[80%] border border-black/10">
-                    <b>AI:</b> ${h.aiCounter?.toFixed(2)}
-                    {h.aiMessage && <div className="text-xs mt-1">{h.aiMessage}</div>}
+              )}
+              {reduxHistory.map((r, i) => (
+                <div key={i} className="flex flex-col gap-3">
+                  <div className="flex justify-end pr-2">
+                    <div className="relative group max-w-[80%]">
+                      <div className="bg-btn-main text-white px-4 py-2 rounded-2xl rounded-tr-none border border-black shadow-sm">
+                        <div className="text-xs font-bold opacity-75 mb-1">Attempt {i + 1}/5</div>
+                        <div className="font-bold">You: ${r.userOffer}</div>
+                        {r.userMessage && <div className="text-sm mt-1">{r.userMessage}</div>}
+                      </div>
+                    </div>
                   </div>
+                  {r.aiCounter && (
+                    <div className="flex justify-start pl-2">
+                      <div className="relative max-w-[80%]">
+                        <div className="bg-gray-100 text-black px-4 py-2 rounded-2xl rounded-tl-none border border-black/20 shadow-sm">
+                          <div className="text-xs font-bold text-btn-main/70 mb-1">AI Counter {i + 1}/5</div>
+                          <div className="font-bold text-btn-main">AI: ${r.aiCounter?.toFixed(2)}</div>
+                          {r.aiMessage && <div className="text-sm mt-1 leading-tight">{r.aiMessage}</div>}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </React.Fragment>
-            ))}
+              ))}
+              <div ref={chatEndRef} />
+            </div>
             {isPending && <div className="text-sm text-gray-500 italic">AI is thinking...</div>}
           </div>
 
@@ -228,17 +260,17 @@ export default function Negotiate() {
             </button>
           </form>
 
-          {reduxCompleted && (
-            <div className="text-center mt-4">
-              {reduxFinalPrice && !reduxHistory.some(h => h.aiMessage?.toLowerCase().includes("deal")) ? (
-                <div className="text-lg font-bold text-red-600 mb-2">Negotiation Unsuccessful!</div>
+            {reduxCompleted && (
+            <div className="text-center mt-4 border-t border-black/10 pt-4">
+              {(reduxFinalPrice && reduxHistory.some(h => h.aiMessage?.includes("Deal!"))) || reduxFinalAccepted ? (
+                <div className="text-xl font-black text-green-700 mb-2 uppercase tracking-tighter">Deal Finalized! 🎉</div>
               ) : (
-                <div className="text-lg font-bold text-green-700 mb-2">Negotiation Successful!</div>
+                <div className="text-xl font-black text-red-600 mb-2 uppercase tracking-tighter">Negotiation Ended</div>
               )}
-              <div className="mb-2">Final Price: <span className="font-bold">${reduxFinalPrice?.toFixed(2)}</span></div>
-              <div className="flex flex-wrap gap-2 justify-center">
-                {reduxFinalPrice && reduxHistory.some(h => h.aiMessage?.toLowerCase().includes("deal")) && (
-                  <button className="px-4 py-2 rounded bg-btn-main border border-black text-white font-bold mt-2" onClick={() => navigate("/leaderboard")}>
+              <div className="mb-4 text-gray-700">Final Price: <span className="font-bold text-btn-main text-xl">${reduxFinalPrice?.toFixed(2)}</span></div>
+              <div className="flex flex-wrap gap-4 justify-center">
+                {(((reduxFinalPrice && reduxHistory.some(h => h.aiMessage?.includes("Deal!"))) || reduxFinalAccepted === true)) && (
+                  <button className="px-8 py-3 rounded-2xl bg-btn-main border border-black text-white font-bold shadow-lg hover:bg-[#372b7c] transition-all transform hover:scale-[1.05]" onClick={() => navigate("/leaderboard")}>
                     Go to Leaderboard
                   </button>
                 )}
@@ -249,10 +281,10 @@ export default function Negotiate() {
                     setMessage("")
                     setShowVideo(false)
                     setShowFinalChoice(false)
-                    setFinalAccepted(null)
+                    reduxSetFinalAccepted(null)
                     startNegotiation(product.id, Number(product.price), product.title, product.image)
                   }}
-                  className="px-4 py-2 rounded bg-btn-main border border-black text-white font-bold mt-2"
+                  className="px-8 py-3 rounded-2xl bg-btn-main border border-black text-white font-bold shadow-lg hover:bg-[#372b7c] transition-all transform hover:scale-[1.05]"
                 >
                   Start New Negotiation
                 </button>
@@ -262,33 +294,40 @@ export default function Negotiate() {
         </div>
       </div>
 
-      {showFinalChoice && finalAccepted === null && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="max-w-sm w-full bg-white border border-black rounded-xl p-6 shadow-2xl text-center">
-            <p className="font-bold mb-4">
-              Wait! I can't go lower than ${reduxFinalPrice?.toFixed(2)}. 
+      {showFinalChoice && reduxFinalAccepted === null && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="max-w-sm w-full bg-bg-card border border-black rounded-3xl p-8 shadow-2xl text-center animate-fadeIn">
+            <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-6 border border-black shadow">
+              <span className="text-3xl">🤝</span>
+            </div>
+            
+            <h3 className="text-xl font-black text-black mb-2 uppercase tracking-tight">Final Offer</h3>
+            
+            <p className="text-gray-700 leading-relaxed mb-6">
+              Wait! I can't go lower than <span className="font-bold text-btn-main text-lg">${(reduxFinalPrice || (reduxHistory.length > 0 ? reduxHistory[reduxHistory.length - 1].aiCounter : 0))?.toFixed(2)}</span>. 
               Do you want to buy it at this price?
             </p>
-            <div className="flex justify-center gap-4 mt-4">
+
+            <div className="flex flex-col gap-3">
               <button
-                className="px-6 py-2 rounded bg-btn-main border border-black text-white font-bold"
+                className="w-full py-3 rounded-2xl bg-btn-main border border-black text-white font-bold shadow-md hover:bg-[#372b7c] transition-all transform hover:scale-[1.02]"
                 onClick={() => {
                   setShowFinalChoice(false)
-                  setFinalAccepted(true)
+                  reduxSetFinalAccepted(true)
                   acceptFinal()
                 }}
               >
-                Yes
+                Yes, I'll take it!
               </button>
               <button
-                className="px-6 py-2 rounded bg-red-600 border border-black text-white font-bold"
+                className="w-full py-3 rounded-2xl bg-white border border-black text-red-600 font-bold shadow-md hover:bg-gray-50 transition-all transform hover:scale-[1.02]"
                 onClick={() => {
                   setShowFinalChoice(false)
-                  setFinalAccepted(false)
+                  reduxSetFinalAccepted(false)
                   setShowVideo(true)
                 }}
               >
-                No
+                No, Too Expensive
               </button>
             </div>
           </div>
